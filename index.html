@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英语单词听写与错题本</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --bg: #f4f6f9;
+            --card: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 导航栏 */
+        .nav-bar {
+            background: var(--primary);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .nav-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .nav-menu button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: background 0.2s;
+        }
+
+        .nav-menu button:hover, .nav-menu button.active {
+            background: white;
+            color: var(--primary);
+        }
+
+        /* 内容区域 */
+        .content-area {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-outline { border: 1px solid var(--secondary); background: transparent; color: var(--secondary); }
+
+        /* 单词列表表格 */
+        .word-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .word-table th, .word-table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .word-table th {
+            background-color: #f8f9fa;
+            color: var(--secondary);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        /* 听写界面 */
+        .dictation-box {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .big-meaning {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .audio-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3);
+        }
+
+        .input-area {
+            position: relative;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .dictation-input {
+            font-size: 1.5rem;
+            text-align: center;
+            letter-spacing: 2px;
+            padding: 15px;
+        }
+
+        .feedback-panel {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .feedback-panel.correct {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .feedback-panel.wrong {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .phrase-display {
+            font-size: 1.1rem;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .correct-answer-show {
+            font-size: 1.2rem;
+            color: var(--danger);
+            margin-bottom: 10px;
+        }
+
+        /* 关卡选择网格 */
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .level-card {
+            background: white;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .level-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .level-card.mistake-book {
+            border-color: var(--danger);
+            background: #fff5f5;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- 顶部导航 -->
+    <div class="nav-bar">
+        <div class="nav-title">📚 英语单词闯关 & 错题本</div>
+        <div class="nav-menu">
+            <button onclick="switchView('dictation')" class="active" id="nav-dictation">开始听写</button>
+            <button onclick="switchView('manage')" id="nav-manage">单词管理</button>
+        </div>
+    </div>
+
+    <div class="content-area">
+        
+        <!-- 1. 听写模式视图 -->
+        <div id="view-dictation" class="view-section active">
+            <div id="level-selection">
+                <h3>选择闯关组别</h3>
+                <p style="color:#666; margin-bottom: 20px;">选择一个分组开始听写，或者挑战你的错题本！</p>
+                <div class="level-grid" id="group-list">
+                    <!-- 动态生成分组卡片 -->
+                </div>
+            </div>
+
+            <div id="game-interface" style="display:none;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <button class="btn btn-outline" onclick="exitGame()">← 返回组别</button>
+                    <span id="progress-text" style="align-self:center; color:#666;">1 / 10</span>
+                </div>
+                
+                <div class="dictation-box">
+                    <div class="big-meaning" id="game-meaning">中文释义</div>
+                    <button class="audio-btn" onclick="playCurrentAudio()" title="点击朗读">🔊</button>
+                    
+                    <div class="input-area">
+                        <input type="text" id="game-input" class="dictation-input" placeholder="输入英文单词" autocomplete="off">
+                    </div>
+
+                    <div id="feedback-box" class="feedback-panel">
+                        <div id="feedback-msg"></div>
+                        <div class="phrase-display" id="feedback-phrase"></div>
+                        <button class="btn btn-primary" id="next-btn" style="margin-top:15px;" onclick="nextWord()">下一个 ➡</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 单词管理视图 -->
+        <div id="view-manage" class="view-section">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>➕ 添加新单词</h3>
+                <div class="form-row">
+                    <input type="text" id="new-word" placeholder="英文单词 (如: apple)">
+                    <input type="text" id="new-meaning" placeholder="中文释义 (如: 苹果)">
+                </div>
+                <div class="form-row" style="margin-top:10px;">
+                    <input type="text" id="new-phrase" placeholder="常用短语/例句 (如: an apple a day)">
+                    <select id="new-group" style="width: 150px;">
+                        <option value="Default">默认分组</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="addWord()">添加</button>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>📋 单词列表</h3>
+                <div>
+                    <input type="text" id="search-box" placeholder="搜索单词..." onkeyup="renderWordList()" style="padding:5px 10px; width:200px;">
+                </div>
+            </div>
+            
+            <table class="word-table">
+                <thead>
+                    <tr>
+                        <th>单词</th>
+                        <th>释义</th>
+                        <th>短语/例句</th>
+                        <th>分组</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="word-list-body">
+                    <!-- 动态生成 -->
+                </tbody>
+            </table>
+            <div id="empty-msg" class="empty-state" style="display:none;">暂无单词，请添加</div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // --- 数据状态 ---
+    let words = JSON.parse(localStorage.getItem('myVocabWords')) || [
+        // 预置一些示例数据
+        { id: 1, word: "meet", meaning: "遇见", phrase: "Nice to meet you.", group: "Module 1" },
+        { id: 2, word: "welcome", meaning: "欢迎", phrase: "Welcome to China.", group: "Module 1" },
+        { id: 3, word: "family", meaning: "家庭", phrase: "family photo", group: "Module 2" }
+    ];
+    
+    let mistakeBook = JSON.parse(localStorage.getItem('mistakeBook')) || []; // 存储单词ID
+    
+    // 游戏状态
+    let currentGameQueue = [];
+    let currentGameIndex = 0;
+    let isMistakeMode = false;
+
+    // --- 初始化 ---
+    function init() {
+        updateGroupSelect();
+        renderWordList();
+        renderLevelSelection();
+    }
+
+    // --- 视图切换 ---
+    function switchView(viewName) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(`view-${viewName}`).classList.add('active');
+        
+        document.querySelectorAll('.nav-menu button').forEach(el => el.classList.remove('active'));
+        document.getElementById(`nav-${viewName}`).classList.add('active');
+
+        if(viewName === 'dictation') {
+            renderLevelSelection();
+            exitGame();
+        } else {
+            renderWordList();
+            updateGroupSelect();
+        }
+    }
+
+    // --- 单词管理逻辑 ---
+    function addWord() {
+        const wordInput = document.getElementById('new-word');
+        const meaningInput = document.getElementById('new-meaning');
+        const phraseInput = document.getElementById('new-phrase');
+        const groupSelect = document.getElementById('new-group');
+
+        const wordVal = wordInput.value.trim();
+        const meaningVal = meaningInput.value.trim();
+        
+        if (!wordVal || !meaningVal) {
+            alert("请输入单词和释义！");
+            return;
+        }
+
+        const newWord = {
+            id: Date.now(),
+            word: wordVal,
+            meaning: meaningVal,
+            phrase: phraseInput.value.trim() || "无短语",
+            group: groupSelect.value
+        };
+
+        words.push(newWord);
+        saveData();
+        
+        // 清空输入
+        wordInput.value = '';
+        meaningInput.value = '';
+        phraseInput.value = '';
+        
+        renderWordList();
+        updateGroupSelect();
+        renderLevelSelection(); // 更新听写界面的分组
+    }
+
+    function deleteWord(id) {
+        if(confirm('确定删除这个单词吗？')) {
+            words = words.filter(w => w.id !== id);
+            // 同时从错题本移除
+            mistakeBook = mistakeBook.filter(mid => mid !== id);
+            saveData();
+            renderWordList();
+            renderLevelSelection();
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem('myVocabWords', JSON.stringify(words));
+        localStorage.setItem('mistakeBook', JSON.stringify(mistakeBook));
+    }
+
+    function updateGroupSelect() {
+        const groups = [...new Set(words.map(w => w.group))];
+        const select = document.getElementById('new-group');
+        const currentVal = select.value;
+        
+        select.innerHTML = '<option value="Default">默认分组</option>';
+        groups.forEach(g => {
+            if(g !== 'Default') {
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.textContent = g;
+                select.appendChild(opt);
+            }
+        });
+        
+        // 尝试保留之前的选择，如果该组还存在的话
+        if (groups.includes(currentVal) || currentVal === 'Default') {
+            select.value = currentVal;
+        }
+    }
+
+    function renderWordList() {
+        const tbody = document.getElementById('word-list-body');
+        const search = document.getElementById('search-box').value.toLowerCase();
+        tbody.innerHTML = '';
+
+        const filteredWords = words.filter(w => 
+            w.word.toLowerCase().includes(search) || 
+            w.meaning.includes(search)
+        );
+
+        if (filteredWords.length === 0) {
+            document.getElementById('empty-msg').style.display = 'block';
+        } else {
+            document.getElementById('empty-msg').style.display = 'none';
+            filteredWords.forEach(w => {
+                const tr = document.createElement('tr');
+                const isMistake = mistakeBook.includes(w.id);
+                tr.innerHTML = `
+                    <td><strong>${w.word}</strong> ${isMistake ? '<span style="color:red;font-size:12px;">(错)</span>' : ''}</td>
+                    <td>${w.meaning}</td>
+                    <td style="color:#666; font-size:0.9em;">${w.phrase}</td>
+                    <td><span class="tag">${w.group}</span></td>
+                    <td><button class="btn btn-danger" style="padding:5px 10px; font-size:0.8rem;" onclick="deleteWord(${w.id})">删除</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    // --- 听写游戏逻辑 ---
+
+    function renderLevelSelection() {
+        const container = document.getElementById('group-list');
+        container.innerHTML = '';
+
+        // 1. 生成错题本入口
+        if (mistakeBook.length > 0) {
+            const mistakeCard = document.createElement('div');
+            mistakeCard.className = 'level-card mistake-book';
+            mistakeCard.innerHTML = `<h3>❌ 错题本</h3><p>${mistakeBook.length} 个待复习单词</p>`;
+            mistakeCard.onclick = () => startGame(true);
+            container.appendChild(mistakeCard);
+        }
+
+        // 2. 生成分组
+        const groups = [...new Set(words.map(w => w.group))];
+        if (groups.length === 0 && words.length > 0) groups.push('Default');
+
+        groups.forEach(group => {
+            const count = words.filter(w => w.group === group).length;
+            if (count > 0) {
+                const card = document.createElement('div');
+                card.className = 'level-card';
+                card.innerHTML = `<h3>${group}</h3><p>${count} 个单词</p>`;
+                card.onclick = () => startGame(false, group);
+                container.appendChild(card);
+            }
+        });
+        
+        if (words.length === 0) {
+            container.innerHTML = '<div class="empty-state">请先去“单词管理”添加单词</div>';
+        }
+    }
+
+    function startGame(isMistake, groupName = null) {
+        isMistakeMode = isMistake;
+        document.getElementById('level-selection').style.display = 'none';
+        document.getElementById('game-interface').style.display = 'block';
+
+        if (isMistake) {
+            // 过滤出在错题本里的单词对象
+            currentGameQueue = words.filter(w => mistakeBook.includes(w.id));
+        } else {
+            currentGameQueue = words.filter(w => w.group === groupName);
+        }
+
+        // 打乱顺序
+        currentGameQueue.sort(() => Math.random() - 0.5);
+        
+        currentGameIndex = 0;
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentGameIndex >= currentGameQueue.length) {
+            finishGame();
+            return;
+        }
+
+        const currentWord = currentGameQueue[currentGameIndex];
+        
+        // UI Reset
+        document.getElementById('game-meaning').textContent = currentWord.meaning;
+        document.getElementById('game-input').value = '';
+        document.getElementById('game-input').className = 'dictation-input';
+        document.getElementById('game-input').disabled = false;
+        document.getElementById('game-input').focus();
+        document.getElementById('feedback-box').className = 'feedback-panel';
+        document.getElementById('feedback-box').style.display = 'none';
+        document.getElementById('progress-text').textContent = `${currentGameIndex + 1} / ${currentGameQueue.length}`;
+
+        // 自动播放声音 (可选，这里设为延迟一点播放以免吓到用户)
+        setTimeout(() => playCurrentAudio(), 500);
+    }
+
+    function playCurrentAudio() {
+        if (currentGameQueue[currentGameIndex]) {
+            const text = currentGameQueue[currentGameIndex].word;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US'; 
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    // 监听回车提交
+    document.getElementById('game-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            checkAnswer();
+        }
+    });
+
+    function checkAnswer() {
+        const input = document.getElementById('game-input');
+        const userVal = input.value.trim().toLowerCase();
+        const correctWord = currentGameQueue[currentGameIndex];
+        
+        const feedbackBox = document.getElementById('feedback-box');
+        const feedbackMsg = document.getElementById('feedback-msg');
+        const feedbackPhrase = document.getElementById('feedback-phrase');
+        const nextBtn = document.getElementById('next-btn');
+
+        input.disabled = true; // 锁定输入
+
+        if (userVal === correctWord.word.toLowerCase()) {
+            // 正确
+            input.classList.add('correct'); // 绿色边框
+            feedbackBox.className = 'feedback-panel correct';
+            feedbackMsg.innerHTML = '✅ 回答正确！';
+            feedbackPhrase.innerHTML = `短语: ${correctWord.phrase}`;
+            
+            // 如果在错题本里，答对了可以考虑移除？(这里策略是：必须连续答对或者手动移除，暂时简化为不移除，除非专门设置)
+            // 为了鼓励，如果答对了，我们可以从错题本移除（可选逻辑）
+            removeFromMistakeBook(correctWord.id);
+
+        } else {
+            // 错误
+            input.classList.add('wrong'); // 红色边框
+            feedbackBox.className = 'feedback-panel wrong';
+            feedbackMsg.innerHTML = `❌ 错误。正确答案是: <strong>${correctWord.word}</strong>`;
+            feedbackPhrase.innerHTML = `短语: ${correctWord.phrase}`;
+            
+            // 加入错题本
+            addToMistakeBook(correctWord.id);
+        }
+
+        feedbackBox.style.display = 'block';
+        nextBtn.focus();
+    }
+
+    function nextWord() {
+        currentGameIndex++;
+        loadQuestion();
+    }
+
+    function exitGame() {
+        document.getElementById('game-interface').style.display = 'none';
+        document.getElementById('level-selection').style.display = 'block';
+        renderLevelSelection(); // 刷新可能变化的错题数量
+    }
+
+    function finishGame() {
+        alert("🎉 恭喜！本组听写完成！");
+        exitGame();
+    }
+
+    // --- 错题本逻辑 ---
+    function addToMistakeBook(id) {
+        if (!mistakeBook.includes(id)) {
+            mistakeBook.push(id);
+            saveData();
+        }
+    }
+
+    function removeFromMistakeBook(id) {
+        if (mistakeBook.includes(id)) {
+            // 策略：答对一次就移除，或者你可以改为更严格的策略
+            mistakeBook = mistakeBook.filter(mid => mid !== id);
+            saveData();
+        }
+    }
+
+    // 启动
+    init();
+
+</script>
+
+</body>
+</html>
